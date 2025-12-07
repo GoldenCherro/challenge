@@ -2,8 +2,8 @@
 
 import { FilterState, Movie } from '@/lib/types';
 import { getUniqueGenres, getUniqueDirectors, getUniqueRatings } from '@/lib/utils';
-import { useState } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, X, Check, Filter } from 'lucide-react';
 
 interface FiltersProps {
   filters: FilterState;
@@ -22,8 +22,6 @@ export function Filters({
   onClearFilters,
   hasActiveFilters,
 }: FiltersProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
-
   const uniqueGenres = getUniqueGenres(allMovies);
   const uniqueDirectors = getUniqueDirectors(allMovies);
   const uniqueRatings = getUniqueRatings(allMovies);
@@ -55,171 +53,179 @@ export function Filters({
     onFiltersChange({ ...filters, yearRange: newRange });
   };
 
+  const activeFilterCount =
+    filters.genres.length +
+    filters.ratings.length +
+    filters.directors.length +
+    (filters.yearRange[0] !== 2010 || filters.yearRange[1] !== new Date().getFullYear() ? 1 : 0);
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+    <div className="mb-6">
+      {/* Filter Bar */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-gray-800">Filters</h2>
-          <span className="text-sm text-gray-600">
-            {resultCount} {resultCount === 1 ? 'result' : 'results'}
-          </span>
-        </div>
         <div className="flex items-center gap-2">
-          {hasActiveFilters && (
-            <button
-              onClick={onClearFilters}
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-            >
-              Clear all
-            </button>
+          <Filter className="w-5 h-5 text-gray-600" />
+          <span className="text-sm font-medium text-gray-700">
+            {resultCount} {resultCount === 1 ? 'movie' : 'movies'}
+          </span>
+          {activeFilterCount > 0 && (
+            <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+              {activeFilterCount} active
+            </span>
           )}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <ChevronDown
-              className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-            />
-          </button>
         </div>
+        {hasActiveFilters && (
+          <button
+            onClick={onClearFilters}
+            className="text-sm text-gray-600 hover:text-gray-900 font-medium flex items-center gap-1"
+          >
+            <X className="w-4 h-4" />
+            Clear all
+          </button>
+        )}
       </div>
 
-      {isExpanded && (
-        <div className="space-y-6">
-          {/* Year Range */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Year Range
-            </label>
-            <div className="flex items-center gap-4">
-              <input
-                type="number"
-                value={filters.yearRange[0]}
-                onChange={(e) => handleYearChange(0, parseInt(e.target.value))}
-                min={2010}
-                max={filters.yearRange[1]}
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-              <span className="text-gray-500">to</span>
-              <input
-                type="number"
-                value={filters.yearRange[1]}
-                onChange={(e) => handleYearChange(1, parseInt(e.target.value))}
-                min={filters.yearRange[0]}
-                max={new Date().getFullYear()}
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-          </div>
+      {/* Filter Dropdowns */}
+      <div className="flex flex-wrap gap-3">
+        <FilterDropdown
+          label="Genre"
+          count={filters.genres.length}
+          items={uniqueGenres.slice(0, 15)}
+          selectedItems={filters.genres}
+          onToggle={handleGenreToggle}
+        />
 
-          {/* Genres */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Genres
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {uniqueGenres.slice(0, 10).map((genre) => (
-                <button
-                  key={genre}
-                  onClick={() => handleGenreToggle(genre)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    filters.genres.includes(genre)
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {genre}
-                </button>
-              ))}
-            </div>
-          </div>
+        <FilterDropdown
+          label="Rating"
+          count={filters.ratings.length}
+          items={uniqueRatings}
+          selectedItems={filters.ratings}
+          onToggle={handleRatingToggle}
+        />
 
-          {/* Ratings */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Ratings
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {uniqueRatings.map((rating) => (
-                <button
-                  key={rating}
-                  onClick={() => handleRatingToggle(rating)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    filters.ratings.includes(rating)
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {rating}
-                </button>
-              ))}
-            </div>
-          </div>
+        <FilterDropdown
+          label="Director"
+          count={filters.directors.length}
+          items={uniqueDirectors.slice(0, 12)}
+          selectedItems={filters.directors}
+          onToggle={handleDirectorToggle}
+        />
 
-          {/* Directors */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Directors (Top 10)
-            </label>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-              {uniqueDirectors.slice(0, 10).map((director) => (
-                <button
-                  key={director}
-                  onClick={() => handleDirectorToggle(director)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    filters.directors.includes(director)
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {director}
-                </button>
-              ))}
-            </div>
-          </div>
+        <YearRangeFilter
+          yearRange={filters.yearRange}
+          onChange={handleYearChange}
+          isActive={filters.yearRange[0] !== 2010 || filters.yearRange[1] !== new Date().getFullYear()}
+        />
+      </div>
+
+      {/* Active Filter Pills */}
+      {hasActiveFilters && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {filters.genres.map((genre) => (
+            <FilterPill
+              key={`genre-${genre}`}
+              label={genre}
+              onRemove={() => handleGenreToggle(genre)}
+            />
+          ))}
+          {filters.ratings.map((rating) => (
+            <FilterPill
+              key={`rating-${rating}`}
+              label={rating}
+              onRemove={() => handleRatingToggle(rating)}
+            />
+          ))}
+          {filters.directors.map((director) => (
+            <FilterPill
+              key={`director-${director}`}
+              label={director}
+              onRemove={() => handleDirectorToggle(director)}
+            />
+          ))}
+          {(filters.yearRange[0] !== 2010 ||
+            filters.yearRange[1] !== new Date().getFullYear()) && (
+            <FilterPill
+              label={`${filters.yearRange[0]} - ${filters.yearRange[1]}`}
+              onRemove={() =>
+                onFiltersChange({
+                  ...filters,
+                  yearRange: [2010, new Date().getFullYear()],
+                })
+              }
+            />
+          )}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Active Filters */}
-      {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">
-            Active Filters
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {filters.genres.map((genre) => (
-              <FilterBadge
-                key={`genre-${genre}`}
-                label={genre}
-                onRemove={() => handleGenreToggle(genre)}
-              />
-            ))}
-            {filters.ratings.map((rating) => (
-              <FilterBadge
-                key={`rating-${rating}`}
-                label={rating}
-                onRemove={() => handleRatingToggle(rating)}
-              />
-            ))}
-            {filters.directors.map((director) => (
-              <FilterBadge
-                key={`director-${director}`}
-                label={director}
-                onRemove={() => handleDirectorToggle(director)}
-              />
-            ))}
-            {(filters.yearRange[0] !== 2010 ||
-              filters.yearRange[1] !== new Date().getFullYear()) && (
-              <FilterBadge
-                label={`${filters.yearRange[0]} - ${filters.yearRange[1]}`}
-                onRemove={() =>
-                  onFiltersChange({
-                    ...filters,
-                    yearRange: [2010, new Date().getFullYear()],
-                  })
-                }
-              />
-            )}
+// Modern Dropdown Filter Component
+function FilterDropdown({
+  label,
+  count,
+  items,
+  selectedItems,
+  onToggle,
+}: {
+  label: string;
+  count: number;
+  items: string[];
+  selectedItems: string[];
+  onToggle: (item: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+          count > 0
+            ? 'border-primary-300 bg-primary-50 text-primary-700'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        <span className="text-sm font-medium">{label}</span>
+        {count > 0 && (
+          <span className="bg-primary-600 text-white text-xs font-semibold w-5 h-5 rounded-full flex items-center justify-center">
+            {count}
+          </span>
+        )}
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-10 min-w-[200px] max-h-[300px] overflow-y-auto">
+          <div className="p-2">
+            {items.map((item) => {
+              const isSelected = selectedItems.includes(item);
+              return (
+                <button
+                  key={item}
+                  onClick={() => onToggle(item)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <span>{item}</span>
+                  {isSelected && <Check className="w-4 h-4 text-primary-600" />}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -227,12 +233,87 @@ export function Filters({
   );
 }
 
-function FilterBadge({ label, onRemove }: { label: string; onRemove: () => void }) {
+// Year Range Filter Component
+function YearRangeFilter({
+  yearRange,
+  onChange,
+  isActive,
+}: {
+  yearRange: [number, number];
+  onChange: (index: 0 | 1, value: number) => void;
+  isActive: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <span className="inline-flex items-center gap-1 bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm">
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+          isActive
+            ? 'border-primary-300 bg-primary-50 text-primary-700'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        <span className="text-sm font-medium">Year</span>
+        {isActive && (
+          <span className="bg-primary-600 text-white text-xs font-semibold w-5 h-5 rounded-full flex items-center justify-center">
+            1
+          </span>
+        )}
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-10 p-4 min-w-[240px]">
+          <label className="block text-xs font-semibold text-gray-700 mb-3">Year Range</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              value={yearRange[0]}
+              onChange={(e) => onChange(0, parseInt(e.target.value) || 2010)}
+              min={2010}
+              max={yearRange[1]}
+              className="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            <span className="text-gray-400 text-sm">to</span>
+            <input
+              type="number"
+              value={yearRange[1]}
+              onChange={(e) => onChange(1, parseInt(e.target.value) || new Date().getFullYear())}
+              min={yearRange[0]}
+              max={new Date().getFullYear()}
+              className="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Filter Pill Component
+function FilterPill({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-primary-100 text-primary-800 px-3 py-1.5 rounded-full text-sm font-medium">
       {label}
-      <button onClick={onRemove} className="hover:text-primary-900">
-        <X className="w-4 h-4" />
+      <button
+        onClick={onRemove}
+        className="hover:bg-primary-200 rounded-full p-0.5 transition-colors"
+        aria-label={`Remove ${label} filter`}
+      >
+        <X className="w-3.5 h-3.5" />
       </button>
     </span>
   );
