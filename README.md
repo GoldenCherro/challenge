@@ -1,4 +1,4 @@
-# Eron Movies Challenge - Fullstack Developer Assessment
+# Movies Challenge - Fullstack Developer Assessment
 
 A modern, responsive web application for browsing and filtering movies released after 2010 by acclaimed directors.
 
@@ -163,23 +163,6 @@ Coverage focuses on:
 - Modern browsers (Chrome, Firefox, Safari, Edge)
 - ES2020+ features
 - No IE11 support
-
-## Performance Optimizations
-
-- Server-side rendering for first page (fast initial load)
-- Debounced search (reduces unnecessary renders)
-- Intersection Observer for infinite scroll (efficient)
-- Client-side filtering (instant feedback)
-- URL state sync (shareable, browser back/forward support)
-
-## Future Improvements
-
-See `TECHNICAL_DECISIONS.md` for detailed discussion of:
-- Movie details modal (Phase 3)
-- Advanced features (favorites, export, recommendations)
-- Performance optimizations (React Query, virtualization)
-- Additional testing coverage
-
 ---
 
-**Built with Next.js, TypeScript, and Tailwind CSS for the Eron Fullstack Developer Challenge**
+**Built with Next.js, TypeScript, and Tailwind CSS**
