@@ -16,13 +16,13 @@ export function filterMovies(movies: Movie[], filters: FilterState): Movie[] {
       if (!matchesSearch) return false;
     }
 
-    // Genre filter
+    // Genre filter (AND logic - movie must have ALL selected genres)
     if (filters.genres.length > 0) {
       const movieGenres = movie.Genre.split(',').map((g) => g.trim());
-      const hasGenre = filters.genres.some((filterGenre) =>
+      const hasAllGenres = filters.genres.every((filterGenre) =>
         movieGenres.includes(filterGenre)
       );
-      if (!hasGenre) return false;
+      if (!hasAllGenres) return false;
     }
 
     // Year range filter

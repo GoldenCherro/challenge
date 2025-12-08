@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { Filters } from '../Filters';
 import { FilterState, Movie } from '@/lib/types';
 
@@ -54,7 +54,7 @@ describe('Filters (Complex)', () => {
     jest.clearAllMocks();
   });
 
-  it('renders filter sections', () => {
+  it('renders filter dropdowns and result count', () => {
     render(
       <Filters
         filters={initialFilters}
@@ -66,8 +66,11 @@ describe('Filters (Complex)', () => {
       />
     );
 
-    expect(screen.getByText('Filters')).toBeInTheDocument();
-    expect(screen.getByText('3 results')).toBeInTheDocument();
+    expect(screen.getByText('3 movies')).toBeInTheDocument();
+    expect(screen.getByText('Genre')).toBeInTheDocument();
+    expect(screen.getByText('Rating')).toBeInTheDocument();
+    expect(screen.getByText('Director')).toBeInTheDocument();
+    expect(screen.getByText('Year')).toBeInTheDocument();
   });
 
   it('handles genre selection', () => {
@@ -82,6 +85,11 @@ describe('Filters (Complex)', () => {
       />
     );
 
+    // Open the Genre dropdown
+    const genreDropdown = screen.getByRole('button', { name: /Genre/i });
+    fireEvent.click(genreDropdown);
+
+    // Click on Action in the dropdown
     const actionButton = screen.getByRole('button', { name: 'Action' });
     fireEvent.click(actionButton);
 
@@ -108,6 +116,11 @@ describe('Filters (Complex)', () => {
       />
     );
 
+    // Open the Genre dropdown
+    const genreDropdown = screen.getByRole('button', { name: /Genre/i });
+    fireEvent.click(genreDropdown);
+
+    // Click on Sci-Fi
     const sciFiButton = screen.getByRole('button', { name: 'Sci-Fi' });
     fireEvent.click(sciFiButton);
 
@@ -134,8 +147,12 @@ describe('Filters (Complex)', () => {
       />
     );
 
-    const actionButton = screen.getByRole('button', { name: 'Action' });
-    fireEvent.click(actionButton);
+    // Click on Action pill to remove it
+    const actionPill = screen.getByText('Action').closest('span');
+    const removeButton = actionPill?.querySelector('button');
+    if (removeButton) {
+      fireEvent.click(removeButton);
+    }
 
     expect(mockOnFiltersChange).toHaveBeenCalledWith({
       ...filtersWithGenres,
@@ -155,6 +172,11 @@ describe('Filters (Complex)', () => {
       />
     );
 
+    // Open Rating dropdown
+    const ratingDropdown = screen.getByRole('button', { name: /Rating/i });
+    fireEvent.click(ratingDropdown);
+
+    // Click PG-13
     const pg13Button = screen.getByRole('button', { name: 'PG-13' });
     fireEvent.click(pg13Button);
 
@@ -176,6 +198,11 @@ describe('Filters (Complex)', () => {
       />
     );
 
+    // Open Director dropdown
+    const directorDropdown = screen.getByRole('button', { name: /Director/i });
+    fireEvent.click(directorDropdown);
+
+    // Click Christopher Nolan
     const nolanButton = screen.getByRole('button', { name: 'Christopher Nolan' });
     fireEvent.click(nolanButton);
 
@@ -197,6 +224,11 @@ describe('Filters (Complex)', () => {
       />
     );
 
+    // Open Year dropdown
+    const yearDropdown = screen.getByRole('button', { name: /Year/i });
+    fireEvent.click(yearDropdown);
+
+    // Get year inputs and change the minimum year
     const yearInputs = screen.getAllByRole('spinbutton');
     const minYearInput = yearInputs[0];
 
@@ -208,11 +240,12 @@ describe('Filters (Complex)', () => {
     });
   });
 
-  it('displays active filters', () => {
+  it('displays active filters as pills', () => {
+    const currentYear = new Date().getFullYear();
     const activeFilters: FilterState = {
       search: '',
       genres: ['Action', 'Sci-Fi'],
-      yearRange: [2010, 2024],
+      yearRange: [2015, currentYear], // Modified year range to be active
       ratings: ['PG-13'],
       directors: ['Christopher Nolan'],
     };
@@ -228,8 +261,16 @@ describe('Filters (Complex)', () => {
       />
     );
 
-    expect(screen.getByText('Active Filters')).toBeInTheDocument();
+    // Count: 2 genres + 1 rating + 1 director + 1 year range = 5 active filters
+    expect(screen.getByText('5 active')).toBeInTheDocument();
     expect(screen.getByText('Clear all')).toBeInTheDocument();
+
+    // Check filter pills are displayed
+    expect(screen.getByText('Action')).toBeInTheDocument();
+    expect(screen.getByText('Sci-Fi')).toBeInTheDocument();
+    expect(screen.getByText('PG-13')).toBeInTheDocument();
+    expect(screen.getByText('Christopher Nolan')).toBeInTheDocument();
+    expect(screen.getByText(`2015 - ${currentYear}`)).toBeInTheDocument();
   });
 
   it('calls clear filters when clicking clear all', () => {
@@ -255,30 +296,51 @@ describe('Filters (Complex)', () => {
     expect(mockOnClearFilters).toHaveBeenCalled();
   });
 
-  it('toggles filter panel expansion', () => {
+  it('shows dropdown count badge when filters are active', () => {
+    const activeFilters: FilterState = {
+      ...initialFilters,
+      genres: ['Action', 'Sci-Fi'],
+    };
+
     render(
       <Filters
-        filters={initialFilters}
+        filters={activeFilters}
         onFiltersChange={mockOnFiltersChange}
         allMovies={mockMovies}
-        resultCount={3}
+        resultCount={2}
         onClearFilters={mockOnClearFilters}
-        hasActiveFilters={false}
+        hasActiveFilters={true}
       />
     );
 
-    const genresLabel = screen.getByText('Genres');
-    expect(genresLabel).toBeInTheDocument();
+    // Check that Genre dropdown shows count badge
+    const genreButton = screen.getByRole('button', { name: /Genre/i });
+    expect(genreButton.textContent).toContain('2');
+  });
 
-    // Find and click the collapse button
-    const collapseButtons = screen.getAllByRole('button');
-    const toggleButton = collapseButtons.find(
-      (btn) => btn.querySelector('svg') !== null
+  it('shows checkmark for selected items in dropdown', () => {
+    const activeFilters: FilterState = {
+      ...initialFilters,
+      genres: ['Action'],
+    };
+
+    render(
+      <Filters
+        filters={activeFilters}
+        onFiltersChange={mockOnFiltersChange}
+        allMovies={mockMovies}
+        resultCount={2}
+        onClearFilters={mockOnClearFilters}
+        hasActiveFilters={true}
+      />
     );
 
-    if (toggleButton) {
-      fireEvent.click(toggleButton);
-      expect(screen.queryByText('Genres')).not.toBeInTheDocument();
-    }
+    // Open Genre dropdown
+    const genreDropdown = screen.getByRole('button', { name: /Genre/i });
+    fireEvent.click(genreDropdown);
+
+    // Action should be selected (has checkmark)
+    const actionButton = screen.getByRole('button', { name: 'Action' });
+    expect(actionButton.classList.contains('bg-primary-50')).toBe(true);
   });
 });

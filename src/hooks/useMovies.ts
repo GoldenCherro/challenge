@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { fetchMovies } from '@/lib/api';
 import { Movie, MoviesResponse } from '@/lib/types';
 
@@ -24,16 +24,6 @@ export function useMovies(initialData?: MoviesResponse): UseMoviesReturn {
   const [error, setError] = useState<string | null>(null);
 
   const hasMore = currentPage < totalPages;
-
-  useEffect(() => {
-    // If we have initial data, set it
-    if (initialData) {
-      setMovies(initialData.data);
-      setCurrentPage(initialData.page);
-      setTotalPages(initialData.total_pages);
-      setTotalMovies(initialData.total);
-    }
-  }, [initialData]);
 
   const loadMore = async () => {
     if (isLoading || !hasMore) return;
